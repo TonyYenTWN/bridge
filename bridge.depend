@@ -1,0 +1,53 @@
+# depslib dependency file v1.0
+1716145166 source:/home/tonyturtletwn/Documents/Projects/bridge/main.cpp
+	"src/process_manager.h"
+
+1716051271 /home/tonyturtletwn/Documents/Projects/bridge/src/player.h
+	<vector>
+
+1716051375 /home/tonyturtletwn/Documents/Projects/bridge/src/draw.h
+	<algorithm>
+	<cstdlib>
+	<ctime>
+	<numeric>
+	<time.h>
+	<vector>
+	"src/statistic.h"
+	"src/write.h"
+
+1716057544 /home/tonyturtletwn/Documents/Projects/bridge//src/write.h
+	<fstream>
+	<sstream>
+	<string>
+	<iostream>
+
+1716148694 /home/tonyturtletwn/Documents/Projects/bridge//src/player.h
+	<vector>
+
+1716148596 /home/tonyturtletwn/Documents/Projects/bridge/src/process_manager.h
+	<filesystem>
+	<iostream>
+	"src/draw.h"
+	"src/player.h"
+	"src/rw.h"
+	"src/statistic.h"
+
+1716051339 /home/tonyturtletwn/Documents/Projects/bridge//src/statistic.h
+
+1716135763 /home/tonyturtletwn/Documents/Projects/bridge//src/draw.h
+	<algorithm>
+	<cstdlib>
+	<ctime>
+	<numeric>
+	<time.h>
+	<vector>
+	"src/statistic.h"
+	"src/rw.h"
+
+1716146919 /home/tonyturtletwn/Documents/Projects/bridge//src/rw.h
+	<fstream>
+	<map>
+	<sstream>
+	<string>
+	<iostream>
+
