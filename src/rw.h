@@ -63,9 +63,9 @@ class reader_class{
                 std::string line;
 
                 // the first line
-                // not counted in num_row
-                std::getline(in, line);
+                // not counted in num_row if col names
                 {
+                    std::getline(in, line);
                     std::stringstream sep(line);
                     std::string field;
 

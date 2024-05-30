@@ -15,8 +15,8 @@
 
 class drawer_class{
     private:
-        unsigned int num_card = get_num_cards();
-        unsigned int num_players = get_num_players();
+        unsigned int num_card = statistic::get_num_cards();
+        unsigned int num_players = statistic::get_num_players();
         std::vector <unsigned int> drawn_cards;
 
         template <typename vec_type>
@@ -60,7 +60,7 @@ class drawer_class{
             initial_status.reserve(num_card_player + 1);
             initial_status.push_back("status");
             for(unsigned int card_iter = 0; card_iter < num_card_player; ++ card_iter){
-                initial_status.push_back("-1");
+                initial_status.push_back("0");
             }
             std::vector <std::vector <std::string>> write_file(2);
             write_file[1] = initial_status;
