@@ -51,6 +51,10 @@ class player_class{
             return shape + " " + number;
         }
 
+        unsigned int get_card_ID(unsigned int card_ID){
+            return this->cards[card_ID];
+        }
+
         unsigned int get_card_type(unsigned int card_ID){
             return (this->cards[card_ID] - 1) / 13;
         }

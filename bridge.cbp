@@ -32,8 +32,8 @@
 			<Add option="-Wall" />
 			<Add option="-fexceptions" />
 		</Compiler>
-		<Unit filename="main.cpp" />
 		<Unit filename="src/draw.h" />
+		<Unit filename="src/main.cpp" />
 		<Unit filename="src/player.h" />
 		<Unit filename="src/process_manager.h" />
 		<Unit filename="src/rw.h" />

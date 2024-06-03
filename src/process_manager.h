@@ -196,18 +196,21 @@ class process_manager_class{
             std::cout << "Virtual players are receiving cards...";
             std::cout << "\n";
             for(unsigned int player_iter = 0; player_iter < players.size(); ++ player_iter){
+                std::cout << "Cards of virtual player " + std::to_string(players[player_iter].get_ID()) + ":";
+                std::cout << "\n";
+
                 std::string filename = "files/cards_player_" + std::to_string(players[player_iter].get_ID()) + ".csv";;
 
                 auto card_data = reader.read_csv(filename);
                 std::vector <unsigned int> cards;
                 cards.reserve(card_data["cards"].size());
                 for(unsigned int card_iter = 0; card_iter < card_data["cards"].size(); ++ card_iter){
-                    cards.push_back(std::stod(card_data["cards"][card_iter]));
+                    cards.push_back((unsigned int) std::stoi(card_data["cards"][card_iter]));
+                    std::cout << "Card " << card_iter + 1 << ": " << statistic::get_card_name(cards[cards.size() - 1]);
+                    std::cout << "\n";
                 }
 
                 players[player_iter].cards_set(cards);
-
-                std::cout << "Virtual player " + std::to_string(players[player_iter].get_ID()) + " received their cards!";
                 std::cout << "\n";
             }
 
@@ -294,6 +297,7 @@ class process_manager_class{
                     writer.write_one_line(std::to_string(0), filename);
                     filename = "files/.game/current_round.txt";
                     writer.write_one_line(std::to_string(1), filename);
+                    std::filesystem::create_directories("files/.game/round_1");
 
                     // Update the ace to 1 no king if no one bids
                     if(num_now == 0 && type_now == 0){
@@ -333,7 +337,7 @@ class process_manager_class{
                 std::cout << "Cards of virtual player " + std::to_string(players[0].get_ID()) + ":";
                 std::cout << "\n";
                 for(unsigned int card_iter = 0; card_iter < players[0].get_cards_size(); ++ card_iter){
-                    std::cout << "Card " << card_iter + 1 << ":" << players[0].get_card_name(card_iter);
+                    std::cout << "Card " << card_iter + 1 << ": " << players[0].get_card_name(card_iter);
                     std::cout << "\n";
                 }
                 std::cout << "\n";
@@ -479,7 +483,7 @@ class process_manager_class{
                     filename = "files/.game/accumulated_player_virtual.txt";
                     unsigned int accumulated_player = (unsigned int) stoi(reader.read_one_line(filename));
                     if(accumulated_player == statistic::get_num_players()){
-                        // Check if current virtual player is the winner
+                        // Check the winner
 
                         break;
                     }
@@ -491,9 +495,29 @@ class process_manager_class{
                         continue;
                     }
 
-                    // Play the card and update current winner
+                    // Show current round and accumuated player
+                    unsigned int card_chosen;
                     std::cout << "Round: " << current_round;
                     std::cout << "\n";
+                    std::cout << "Player: " << accumulated_player;
+                    std::cout << "\n";
+
+                    // Show the previously played cards in this round
+                    std::vector <unsigned int> ID;
+                    ID.reserve(statistic::get_num_players());
+                    std::vector <unsigned int> card;
+                    card.reserve(statistic::get_num_players());
+                    std::string dir_name = "files/.game/round_" + std::to_string(current_round);
+                    for (const auto & entry : std::filesystem::directory_iterator(dir_name)){
+                        auto data_temp = reader.read_csv(entry.path());
+                        ID.push_back((unsigned int) stoi(data_temp["ID"][0]));
+                        card.push_back((unsigned int) stoi(data_temp["card"][0]));
+                        auto card_name_temp = statistic::get_card_name(card[card.size() - 1]);
+                        std::cout << "Player " + data_temp["ID"][0] + " played " + card_name_temp;
+                        std::cout << "\n";
+                    }
+
+                    // Play the card and update current winner
                     if(accumulated_player == 0){
                         // First virtual player has no constraint on the card type they can play
                         std::cout << "Available cards of virtual player " + std::to_string(players[player_iter].get_ID()) + ":";
@@ -505,7 +529,6 @@ class process_manager_class{
                             }
                         }
                         std::cout << "Choose the card you want to play...";
-                        unsigned int card_chosen;
                         std::cin >> card_chosen;
                         card_chosen -= 1;
                         players[player_iter].update_card_status(card_chosen, current_round);
@@ -554,22 +577,27 @@ class process_manager_class{
                             std::cout << "\n";
                         }
                         std::cout << "Choose the card you want to play...";
-                        unsigned int card_chosen;
                         std::cin >> card_chosen;
                         card_chosen -= 1;
                         players[player_iter].update_card_status(card_chosen, current_round);
                         std::cout << "\n";
                     }
 
-                    // Update players played, next player and (possibly) rounds played
-                    // The following order is designed to avoid race conditions!!
-                    if(accumulated_player + 1 == statistic::get_num_players()){
-                        // Update winner of the round
-
-                        // Check if current virtual player is the winner
-
+                    // Update cards played
+                    filename = "files/.game/round_" + std::to_string(current_round);
+                    filename += "/player_virtual_" + std::to_string(players[player_iter].get_ID());
+                    {
+                        std::vector <std::vector <std::string>> data(2);
+                        data[0] = std::vector <std::string> (2);
+                        data[0][0] = "ID";
+                        data[0][1] = std::to_string(players[player_iter].get_ID());
+                        data[1] = std::vector <std::string> (2);
+                        data[1][0] = "card";
+                        data[1][1] = std::to_string(players[player_iter].get_card_ID(card_chosen));
+                        writer.write_csv(data, filename);
                     }
 
+                    // Update players played, next player and (possibly) rounds played
                     // Update accumulated players played in the round
                     filename = "files/.game/accumulated_player_virtual.txt";
                     accumulated_player += 1;
@@ -577,6 +605,8 @@ class process_manager_class{
 
                     if(accumulated_player == statistic::get_num_players()){
                         // If round ends
+                        // Check the winner
+
                         // Set winner of this round as first player of next round
 
                         // Reset accumulayed player to 0 for other players to play the next round
@@ -588,6 +618,7 @@ class process_manager_class{
                         filename = "files/.game/current_round.txt";
                         current_round += 1;
                         writer.write_one_line(std::to_string(current_round), filename);
+                        std::filesystem::create_directories("files/.game/round_" + std::to_string(current_round));
                         if(current_round > statistic::get_num_rounds()){
                             break_flag = 1;
                             break;
