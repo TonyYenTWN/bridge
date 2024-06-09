@@ -3,6 +3,9 @@
 // STL
 #include <vector>
 
+// Project specific
+#include "src/rw.h"
+
 class player_class{
     private:
         unsigned int ID;
@@ -63,8 +66,22 @@ class player_class{
             return(this->status[card_ID]);
         }
 
-        void update_card_status(unsigned int card_ID, unsigned int value){
+        void update_card_status(unsigned int card_ID, unsigned int value, std::string filename){
             this->status[card_ID] = value;
+
+            writer_class writer;
+            std::vector <std::vector <std::string>> data(2);
+            data[0] = std::vector <std::string> (this->cards.size() + 1);
+            data[0][0] = "cards";
+            for(unsigned int card_iter = 0; card_iter < this->cards.size(); ++ card_iter){
+                data[0][card_iter + 1] = std::to_string(this->cards[card_iter]);
+            }
+            data[1] = std::vector <std::string> (this->cards.size() + 1);
+            for(unsigned int card_iter = 0; card_iter < this->cards.size(); ++ card_iter){
+                data[0][card_iter + 1] = std::to_string(this->status[card_iter]);
+            }
+            data[1][0] = "status";
+            writer.write_csv(data, filename);
         }
 
         void ID_set(unsigned int input){

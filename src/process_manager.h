@@ -23,6 +23,78 @@ inline int file_count(std::string dirname){
     return num_file;
 }
 
+inline void check_winner(player_class &player, unsigned int current_round, unsigned int ace_type, bool update_turn = 0){
+    reader_class reader;
+    writer_class writer;
+
+    std::vector <unsigned int> ID_full;
+    ID_full.reserve(statistic::get_num_players());
+    std::vector <unsigned int> card_full;
+    card_full.reserve(statistic::get_num_players());
+    std::string dir_name = "files/.game/round_" + std::to_string(current_round);
+
+    for (const auto & entry : std::filesystem::directory_iterator(dir_name)){
+        auto data_temp = reader.read_csv(entry.path());
+        ID_full.push_back((unsigned int) stoi(data_temp["ID"][0]));
+        card_full.push_back((unsigned int) stoi(data_temp["card"][0]));
+    }
+
+    unsigned int winner_ID;
+    unsigned int winner_card = 0;
+    bool ace_flag = 0;
+
+    for(unsigned int player_iter = 0; player_iter < ID_full.size(); ++ player_iter){
+        unsigned int type_temp = (card_full[player_iter] - 1) / 13;
+        type_temp += 1;
+
+        // Check if ace is played by player of current loop
+        if(type_temp == ace_type){
+            ace_flag = 1;
+
+            winner_card = std::max(winner_card, card_full[player_iter]);
+
+            if(winner_card == card_full[player_iter]){
+                winner_ID = ID_full[player_iter];
+            }
+        }
+
+        // If ace is played, then no need to compare other types of card
+        if(ace_flag){
+            continue;
+        }
+
+        // Check type of current round
+        std::string filename = "files/.game/type_current_round.txt";
+        unsigned int type_current_round = (unsigned int) stoi(reader.read_one_line(filename));
+        if(type_temp == type_current_round){
+            winner_card = std::max(winner_card, card_full[player_iter]);
+
+            if(winner_card == card_full[player_iter]){
+                winner_ID = ID_full[player_iter];
+            }
+        }
+    }
+
+    // Show the winner
+    std::cout << "Virtual player " << winner_ID << " is the winner of round " << current_round << "!";
+    std::cout << "\n";
+    std::cout << "\n";
+
+    // Add win if player is winner
+    if(player.get_ID() == winner_ID){
+        player.num_win_add();
+    }
+
+    // Record winner and first player of next round
+    if(update_turn){
+        std::string filename = "files/.game/turn_player_virtual.txt";
+        writer.write_one_line(std::to_string(winner_ID), filename);
+
+        filename = "files/.game/.winners/round_" + std::to_string(current_round);
+        writer.write_one_line(std::to_string(winner_ID), filename);
+    }
+}
+
 class process_manager_class{
     private:
         unsigned int num_real_player;
@@ -199,7 +271,7 @@ class process_manager_class{
                 std::cout << "Cards of virtual player " + std::to_string(players[player_iter].get_ID()) + ":";
                 std::cout << "\n";
 
-                std::string filename = "files/cards_player_" + std::to_string(players[player_iter].get_ID()) + ".csv";;
+                std::string filename = "files/cards_player_" + std::to_string(players[player_iter].get_ID()) + ".csv";
 
                 auto card_data = reader.read_csv(filename);
                 std::vector <unsigned int> cards;
@@ -298,6 +370,7 @@ class process_manager_class{
                     filename = "files/.game/current_round.txt";
                     writer.write_one_line(std::to_string(1), filename);
                     std::filesystem::create_directories("files/.game/round_1");
+                    std::filesystem::create_directories("files/.game/.winners");
 
                     // Update the ace to 1 no king if no one bids
                     if(num_now == 0 && type_now == 0){
@@ -483,8 +556,6 @@ class process_manager_class{
                     filename = "files/.game/accumulated_player_virtual.txt";
                     unsigned int accumulated_player = (unsigned int) stoi(reader.read_one_line(filename));
                     if(accumulated_player == statistic::get_num_players()){
-                        // Check the winner
-
                         break;
                     }
 
@@ -531,7 +602,8 @@ class process_manager_class{
                         std::cout << "Choose the card you want to play...";
                         std::cin >> card_chosen;
                         card_chosen -= 1;
-                        players[player_iter].update_card_status(card_chosen, current_round);
+                        filename = "files/cards_player_" + std::to_string(players[player_iter].get_ID()) + ".csv";
+                        players[player_iter].update_card_status(card_chosen, current_round, filename);
                         std::cout << "\n";
 
                         // Update card type of current round
@@ -579,7 +651,8 @@ class process_manager_class{
                         std::cout << "Choose the card you want to play...";
                         std::cin >> card_chosen;
                         card_chosen -= 1;
-                        players[player_iter].update_card_status(card_chosen, current_round);
+                        filename = "files/cards_player_" + std::to_string(players[player_iter].get_ID()) + ".csv";
+                        players[player_iter].update_card_status(card_chosen, current_round, filename);
                         std::cout << "\n";
                     }
 
@@ -603,16 +676,11 @@ class process_manager_class{
                     accumulated_player += 1;
                     writer.write_one_line(std::to_string(accumulated_player), filename);
 
+                    // Check if round ends
                     if(accumulated_player == statistic::get_num_players()){
                         // If round ends
                         // Check the winner
-
-                        // Set winner of this round as first player of next round
-
-                        // Reset accumulayed player to 0 for other players to play the next round
-                        filename = "files/.game/accumulated_player_virtual.txt";
-                        accumulated_player = 0;
-                        writer.write_one_line(std::to_string(accumulated_player), filename);
+                        check_winner(players[player_iter], current_round, ace_type, 1);
 
                         // Update current round
                         filename = "files/.game/current_round.txt";
@@ -623,6 +691,11 @@ class process_manager_class{
                             break_flag = 1;
                             break;
                         }
+
+                        // Reset accumulayed player to 0 for other players to play the next round
+                        filename = "files/.game/accumulated_player_virtual.txt";
+                        accumulated_player = 0;
+                        writer.write_one_line(std::to_string(accumulated_player), filename);
                     }
                     else{
                         // Current round continues
